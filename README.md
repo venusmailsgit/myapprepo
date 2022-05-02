@@ -40,7 +40,16 @@ There is a [postman collection](DevOps-Assessment.postman_collection.json). Feel
     7. Notify once the build is completed
 
 #### Level - 3 : Provision an environment
-1. Either manually or through code (like through usage of Terraform) provision the environment 
+1. Either manually or through code (like through usage of Terraform) provision the environment
+2. As part of the environment,
+    1. Create a VPC
+    2. Ensure that the VPC spans at least 2 availability zones
+    3. Create a public subnet 
+    4. Create a private subnet 
+    5. Provision EC2 instances; refer to [app-install.sh](app-install.sh); use it as user data to initialize an app on VM startup
+    6. Configure classic Elastic Load Balancer to route traffic to the EC2 instances 
 
 #### Level - 4 : Deploy the solution
-#### Level - 5 : Monitor the solution 
+1. Complete Level - 3
+2. Update the VMs to have Docker runtime
+3. Deploy the image on the VM by downloading it from Docker Hub
