@@ -33,8 +33,8 @@ There is a [postman collection](DevOps-Assessment.postman_collection.json). Feel
 2. As part of the pipeline, 
     1. Check out the code
     2. Build it
-    3. Test using SonarQube (optional) 
-    4. Test it
+    3. Check using SonarQube (optional) 
+    4. Test the API
     5. Create Docker image of the same
     6. Push to Docker Hub
     7. Notify once the build is completed
