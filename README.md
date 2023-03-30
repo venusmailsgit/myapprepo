@@ -33,14 +33,14 @@ There is a [postman collection](DevOps-Assessment.postman_collection.json). Feel
 2. As part of the pipeline, 
     1. Check out the code
     2. Build it
-    3. Check using SonarQube (optional) 
-    4. Test the API
-    5. Create Docker image of the same
+    3. Check using SonarQube
+    4. Test the API by running Postman in a headless manner
+    5. Create Docker image for the app
     6. Push to Docker Hub
     7. Notify once the build is completed
 
 #### Level - 3 : Provision an environment
-1. Either manually or through code (like through usage of Terraform) provision the environment
+1. Provision the environment using code
 2. As part of the environment,
     1. Create a VPC
     2. Ensure that the VPC spans at least 2 availability zones
