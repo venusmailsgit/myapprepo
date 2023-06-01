@@ -1,8 +1,11 @@
+properties([parameters([string(name: 'sonar_server_ip', trim: true), string(defaultValue: 'v1', name: 'docker_tag_version', trim: true)])])
 pipeline {
     agent any
     
+    
     environment {
 		DOCKERHUB_CREDENTIALS=credentials('docker-hub-credentials')
+        SONAR_TOKEN=credentials('sonartoken')
 	}
 	
 	stages {
@@ -46,7 +49,7 @@ pipeline {
                 // Replace with your SonarQube scanner command
                 
                     dir("./my-app") {
-                        sh 'mvn sonar:sonar -Dsonar.host.url=http://192.168.0.183:9000 -Dsonar.token=squ_18c1eec4179cff0d68af71fd0e1475b537c91f52'
+                        sh 'mvn sonar:sonar -Dsonar.host.url=http://$sonar_server_ip:9000 -Dsonar.token=$SONAR_TOKEN'
                     }
                 
             }
