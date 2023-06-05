@@ -1,0 +1,98 @@
+properties([parameters([string(name: 'sonar_server_ip', trim: true), string(defaultValue: 'v1', name: 'docker_tag_version', trim: true)])])
+pipeline {
+    agent any
+    
+    
+    environment {
+		DOCKERHUB_CREDENTIALS=credentials('docker-hub-credentials')
+        SONAR_TOKEN=credentials('sonartoken')
+	}
+	
+	stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the code from version control system (e.g., Git)
+                // Replace the repository URL and credentials with your own
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: '*/main']],
+                          userRemoteConfigs: [[url: 'https://github.com/cloudops7/devops-assessment.git']]])
+            }
+        }
+        
+
+        
+        stage('Build') {
+            steps {
+                // Perform the build steps (e.g., compiling code, packaging artifacts)
+                // Replace with your own build commands
+                dir("./my-app") {
+                    sh 'mvn clean install'
+                }
+                
+            }
+        }
+        
+        stage('Start the APP for API testing') {
+            steps {
+                script {
+                    // Run the shell command and capture the output
+                    def output = sh(returnStdout: true, script: 'java -jar -Dserver.port=8888  ./my-app/target/my-app-0.0.1-SNAPSHOT.jar & echo "Successfully started the java app"')
+
+                    echo "Output: ${output}"
+                }
+            }
+        }
+        
+        stage('SonarQube') {
+            steps {
+                // Run SonarQube analysis on the code
+                // Replace with your SonarQube scanner command
+                
+                    dir("./my-app") {
+                        sh 'mvn sonar:sonar -Dsonar.host.url=http://$sonar_server_ip:9000 -Dsonar.token=$SONAR_TOKEN'
+                    }
+                
+            }
+        }
+        
+            stage('API test') {
+            steps {
+                sh 'newman run DevOps-Assessment.postman_collection.json'
+            }
+        }
+
+        
+        stage('Build Docker Image') {
+            steps {
+                    sh 'docker build -t akashm141195/test-project:v1 .'
+
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                // Push the Docker image to Docker Hub
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                sh 'docker push akashm141195/test-project:v1'
+                sh 'docker logout'
+            }
+        
+        }
+    
+        
+
+    }
+    post {
+            success {
+                echo 'Job successful'
+            }
+            
+            failure {
+                echo 'Job failed'
+            }
+        
+            aborted {
+                echo 'Job aborted'
+            }
+        }
+}
