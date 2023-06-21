@@ -6,6 +6,8 @@ name: CD Pipeline
 on:
   push:
     branches: [pipeline-test]
+  
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,7 +36,8 @@ jobs:
     
     - name: Run the jar file
       run: |
-        
+
+        ls -al
         java -jar my-app-0.0.1-SNAPSHOT.jar
     
     - name: Install Newman
