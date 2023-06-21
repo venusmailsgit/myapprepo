@@ -38,7 +38,8 @@ jobs:
       run: |
         cd my-app/target
         ls -al
-        java -jar my-app-0.0.1-SNAPSHOT.jar
+        java -jar my-app-0.0.1-SNAPSHOT.jar &
+        sleep 20
     
     - name: Install Newman
       run: |
