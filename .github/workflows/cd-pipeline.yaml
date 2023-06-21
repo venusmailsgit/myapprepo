@@ -64,9 +64,9 @@ jobs:
           newman run DevOps-Assessment.postman_collection.json
     
     - name: Build Docker image
-      run: docker build -t muthoot-test:v1 .
+      run: docker build -t silentassassin11/muthoot-repo:v1 .
 
     - name: Push to Docker Hub
       run: |
         docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        docker push muthoot-test:v1
+        docker push silentassassin11/muthoot-repo:v1
