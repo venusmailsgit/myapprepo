@@ -24,6 +24,9 @@ jobs:
     - name: Official SonarQube Scan
       # uses: SonarSource/sonarqube-scan-action@a6ba0aafc293e03de5437af7edbc97f7d3ebc91a
       uses: SonarSource/sonarqube-scan-action@v1.2.0
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
         # Additional arguments to the sonar-scanner
         #args: # optional
