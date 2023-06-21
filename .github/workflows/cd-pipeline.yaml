@@ -34,7 +34,7 @@ jobs:
     
     - name: Run the jar file
       run: |
-        cd target
+        
         java -jar my-app-0.0.1-SNAPSHOT.jar
     
     - name: Install Newman
