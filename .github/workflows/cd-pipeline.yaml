@@ -62,8 +62,11 @@ jobs:
     - name: Test API with Postman
       run: |
           newman run DevOps-Assessment.postman_collection.json
+    
+    - name: Build Docker image
+      run: docker build -t muthoot-test:v1 .
 
-#     - name: Publish to GitHub Packages Apache Maven
-#       run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-#       env:
-#         GITHUB_TOKEN: ${{ github.token }}
+    - name: Push to Docker Hub
+      run: |
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker push muthoot-test:v1
