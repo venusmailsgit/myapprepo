@@ -36,7 +36,7 @@ jobs:
     
     - name: Run the jar file
       run: |
-
+        cd my-app/target
         ls -al
         java -jar my-app-0.0.1-SNAPSHOT.jar
     
@@ -46,7 +46,6 @@ jobs:
 
     - name: Test API with Postman
       run: |
-          cd ../..
           newman run DevOps-Assessment.postman_collection.json
 
 #     - name: Publish to GitHub Packages Apache Maven
