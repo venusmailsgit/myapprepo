@@ -32,7 +32,7 @@ jobs:
         #args: # optional
         # Set the sonar.projectBaseDir analysis property
         projectBaseDir: .
-        args: "sonar-scanner -Dsonar.projectKey=anshuman1112_devops-assessment -Dsonar.organization=anshuman1112"
+        args: "-Dsonar.projectKey=anshuman1112_devops-assessment -Dsonar.organization=anshuman1112"
         entrypoint: /bin/bash
       
 #     - name: Set up JDK 11
