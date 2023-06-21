@@ -26,3 +26,9 @@ my-app/.mvn/wrapper/maven-wrapper.jar
 *.properties
 my-app/mvnw
 *.cmd
+
+**/*.tfstate
+**/*.tfstate.backup
+**/*terraform.lock.hcl
+*.pem
+.terraform*
