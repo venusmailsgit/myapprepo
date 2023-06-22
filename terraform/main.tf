@@ -30,20 +30,20 @@ variable "private_subnet_cidr_block" {
 }
 
 # Create VPC
-resource "aws_vpc" "muthoot_vpc" {
+resource "aws_vpc" "assessment_vpc" {
   cidr_block = var.vpc_cidr_block
 
   enable_dns_hostnames = true
   enable_dns_support   = true
 
   tags = {
-    Name = "MuthootVPC"
+    Name = "AssessmentVPC"
   }
 }
 
 # Create public subnet
 resource "aws_subnet" "public_subnet" {
-  vpc_id     = aws_vpc.muthoot_vpc.id
+  vpc_id     = aws_vpc.assessment_vpc.id
   cidr_block = var.public_subnet_cidr_block
   availability_zone = "${var.aws_region}a"
 
@@ -54,7 +54,7 @@ resource "aws_subnet" "public_subnet" {
 
 # Create private subnet
 resource "aws_subnet" "private_subnet" {
-  vpc_id     = aws_vpc.muthoot_vpc.id
+  vpc_id     = aws_vpc.assessment_vpc.id
   cidr_block = var.private_subnet_cidr_block
   availability_zone = "${var.aws_region}b"
 
@@ -64,22 +64,8 @@ resource "aws_subnet" "private_subnet" {
 }
 
 # Create security group
-resource "aws_security_group" "muthoot_sg" {
-  vpc_id = aws_vpc.muthoot_vpc.id
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_security_group" "assessment_public_sg" {
+  vpc_id = aws_vpc.assessment_vpc.id
 
   ingress {
     from_port   = 8080
@@ -96,22 +82,52 @@ resource "aws_security_group" "muthoot_sg" {
   }
 
   tags = {
-    Name = "MuthootSecurityGroup"
+    Name = "AssessmentPublicSecurityGroup"
+  }
+}
+
+# Create security group
+resource "aws_security_group" "assessment_private_sg" {
+  vpc_id = aws_vpc.assessment_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    security_groups = [aws_security_group.assessment_public_sg.id]  # Allow ingress from load balancer security group
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "AssessmentPrivateSecurityGroup"
   }
 }
 
 # Provision EC2 instances
-resource "aws_instance" "muthoot_instance" {
+resource "aws_instance" "assessment_instance" {
   count         = 2
   instance_type = var.instance_type
   ami           = var.instance_ami  
 
-  subnet_id         = aws_subnet.public_subnet.id
-  associate_public_ip_address = true
+  subnet_id         = aws_subnet.private_subnet.id
+  associate_public_ip_address = false
 
   key_name = "PrivKeyus-east-1"
 
-  vpc_security_group_ids = [aws_security_group.muthoot_sg.id]
+  vpc_security_group_ids = [aws_security_group.assessment_private_sg.id]
 
   user_data = <<-EOF
     #!/bin/bash
@@ -130,29 +146,62 @@ resource "aws_instance" "muthoot_instance" {
     EOF
 
   tags = {
-    Name = "MuthootInstance-${count.index}"
+    Name = "AssessmentInstance-${count.index}"
   }
 }
 
-resource "aws_internet_gateway" "muthoot_igw" {
-  vpc_id = aws_vpc.muthoot_vpc.id
+resource "aws_internet_gateway" "assessment_igw" {
+  vpc_id = aws_vpc.assessment_vpc.id
 
   tags = {
-    Name = "MuthootIGW"
+    Name = "AssessmentIGW"
   }
 }
 
-resource "aws_route" "muthoot_default_route" {
-  route_table_id         = aws_vpc.muthoot_vpc.main_route_table_id
+resource "aws_route" "assessment_default_route" {
+  route_table_id         = aws_vpc.assessment_vpc.main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.muthoot_igw.id
+  gateway_id             = aws_internet_gateway.assessment_igw.id
+}
+
+
+# NAT Gateway for the public subnet
+resource "aws_eip" "nat_gateway" {
+  domain                       = "vpc"
+  associate_with_private_ip = "10.0.0.5"
+  depends_on                = [aws_internet_gateway.assessment_igw]
+}
+
+
+resource "aws_nat_gateway" "assessment_ngw" {
+  allocation_id = aws_eip.nat_gateway.id
+  subnet_id     = aws_subnet.public_subnet.id
+
+  depends_on = [aws_eip.nat_gateway]
+}
+
+resource "aws_route_table" "assessment_private_route_table" {
+  vpc_id = aws_vpc.assessment_vpc.id
+}
+
+# Route NAT Gateway
+resource "aws_route" "assessment_ngw_route" {
+  route_table_id         = aws_route_table.assessment_private_route_table.id
+  nat_gateway_id         = aws_nat_gateway.assessment_ngw.id
+  destination_cidr_block = "0.0.0.0/0"
+}
+
+resource "aws_route_table_association" "assessment_private_route_association" {
+  route_table_id = aws_route_table.assessment_private_route_table.id
+  subnet_id      = aws_subnet.private_subnet.id
 }
 
 # Configure Classic Load Balancer
-resource "aws_elb" "muthoot_elb" {
-  name               = "MuthootELB"
-  subnets         = [aws_subnet.public_subnet.id]
-  security_groups  = [aws_security_group.muthoot_sg.id]
+resource "aws_elb" "assessment_elb" {
+  name               = "AssessmentELB"
+  subnets         = [aws_subnet.public_subnet.id, aws_subnet.private_subnet.id ]
+  security_groups  = [aws_security_group.assessment_public_sg.id]
+  #availability_zones = ["${var.aws_region}a", "${var.aws_region}b"]
 
   listener {
     instance_port     = 8080
@@ -165,11 +214,11 @@ resource "aws_elb" "muthoot_elb" {
     target              = "HTTP:8080/"
     healthy_threshold   = 2
     unhealthy_threshold = 2
-    timeout             = 3
+    timeout             = 20
     interval            = 30
   }
 
-  instances = aws_instance.muthoot_instance.*.id
+  instances = aws_instance.assessment_instance.*.id
 
   cross_zone_load_balancing   = true
   idle_timeout               = 400
@@ -177,6 +226,6 @@ resource "aws_elb" "muthoot_elb" {
   connection_draining_timeout = 400
 
   tags = {
-    Name = "MuthootELB"
+    Name = "AssessmentELB"
   }
 }
