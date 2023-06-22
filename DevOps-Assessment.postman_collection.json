@@ -11,7 +11,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/api/employeees",
+					"raw": "http://localhost:8080/api/employees",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -41,7 +41,7 @@
 					"raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"designation\": \"SDE\",\n    \"age\": 26\n}"
 				},
 				"url": {
-					"raw": "http://localhost:8080/api/employees",
+					"raw": "http://localhost:8000/api/employees",
 					"protocol": "http",
 					"host": [
 						"localhost"
