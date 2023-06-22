@@ -11,7 +11,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/api/employees",
+					"raw": "http://localhost:8080/api/employeees",
 					"protocol": "http",
 					"host": [
 						"localhost"
