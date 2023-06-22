@@ -1,6 +1,3 @@
-# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
-
 name: CD Pipeline
 
 on:
@@ -13,21 +10,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      
-#     - name: Set up JDK 11
-#       uses: actions/setup-java@v3
-#       with:
-#         java-version: '11'
-#         distribution: 'temurin'
-#         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-#         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Build with Maven
       run: |
@@ -35,20 +21,16 @@ jobs:
         mvn clean install
 
     - name: Official SonarQube Scan
-      # uses: SonarSource/sonarqube-scan-action@a6ba0aafc293e03de5437af7edbc97f7d3ebc91a
       uses: SonarSource/sonarqube-scan-action@v1.2.0
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       with:
-        # Additional arguments to the sonar-scanner
-        #args: # optional
-        # Set the sonar.projectBaseDir analysis property
         projectBaseDir: .
-        args: "-Dsonar.projectKey=anshuman1112_devops-assessment -Dsonar.organization=anshuman1112 -Dsonar.java.binaries=my-app/target/classes"
+        args: "-Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }} -Dsonar.organization=anshuman1112 -Dsonar.java.binaries=my-app/target/classes"
         entrypoint: /bin/bash
     
-    - name: Run the jar file
+    - name: Run the Java springboot application
       run: |
         cd my-app/target
         ls -al
@@ -61,7 +43,19 @@ jobs:
 
     - name: Test API with Postman
       run: |
-          newman run DevOps-Assessment.postman_collection.json
+          newman run DevOps-Assessment.postman_collection.json --bail || echo "::set-output name=status::failed"
+          echo "::set-output name=status::passed"
+
+    - name: Check Newman test result
+      run: |
+        status="${{ steps.newman.outputs.status }}"
+        if [[ "$status" == "failed" ]]; then
+          echo "Newman tests failed"
+          exit 1
+        else
+          echo "Newman tests passed"
+        fi
+    
     
     - name: Build Docker image
       run: docker build -t silentassassin11/muthoot-repo:v1 .
