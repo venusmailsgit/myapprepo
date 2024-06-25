@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+    stages {
+        stage('Code Checkout') {
+            steps {
+                dir("./my-app") {
+					//Code Checkout from the git repo
+				    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'git-token', url: 'https://github.com/venusmailsgit/myapprepo.git']])
+					
+					//Build the code with Maven
+				    sh "mvn -Dmaven.test.failure.ignore=true clean package"
+                }
+			}
+		}
+		stage('Sonar Analasys') {
+            steps {
+               dir("./my-app") {
+                   sh 'mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=venusmailsgit_myapprepo -Dsonar.token=a6a8e01893608cac618bfa8c092eec1757bfc2b4'
+                }
+
+            }
+        }
+		stage('API Extention') {
+            steps {
+				script {
+                sh 'newman run DevOps-Assessment.postman_collection.json'
+				}
+            }
+        }
+		stage('Build Image') {
+			steps {
+				script {
+					sh 'docker build -t "vlmpractice/java-app-repo:my-app-1.0 .'
+					}
+			}
+		}
+		stage ('Push Docker Image')	{
+			steps {
+				script {
+					withCredentials([string(credentialsId: 'docker-pass', variable: 'dockerpass')]) {
+					sh 'docker login -u vlmpractice -p ${dockerpass}
+					
+					sh 'docker push vlmpractice/java-app-repo:my-app-1.0'
+					}
+				}
+			}
+		}
+	}
+	post {
+			success {
+				emailext(
+					subject: "${JOB_NAME}.${BUILD_NUMBER} Success", 
+					mimeType: 'text/html',
+					to: "myemail@gmail.com",
+					body: subject: "${JOB_NAME}.${BUILD_NUMBER} Sucess"
+				)
+			}
+			failure {
+				emailext(
+					subject: "${JOB_NAME}.${BUILD_NUMBER} Failed", 
+					mimeType: 'text/html',
+					to: "myemail@gmail.com",
+					body: subject: "${JOB_NAME}.${BUILD_NUMBER} Failed"
+				)
+			}
+        }
+}
+
